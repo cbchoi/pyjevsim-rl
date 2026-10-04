@@ -1,5 +1,9 @@
 # Continuation semantics reuse and execution cost study
 
+The completed study below is preserved as written. The separate, not-yet-executed
+[analytical break-even prediction design](BREAK_EVEN_DESIGN.md) addresses its
+workload and measurement limitations without pooling or relabeling these results.
+
 This study evaluates three distinct claims: preservation of restored execution
 and intervention semantics; integration and maintenance of a new model without
 changing the continuation core; and the runtime cost boundary between replay R,

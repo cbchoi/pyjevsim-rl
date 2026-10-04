@@ -117,3 +117,53 @@ as achieved. The inventory C1 adapter is not smaller than its N counterpart.
 RESEARCH_RESULTS.md records all three completed engineering analyses and the
 separate first-cohort failure. The documentation skill's evidence/scope guidance
 keeps measured findings, conditional arguments and missing human evidence distinct.
+
+## MS38 L1 Plan
+
+TASK207 responds to the request to design the analytical break-even experiment.
+The existing 34d0023 results are motivation, not calibration or validation data.
+Three read-only agents review workload construction, statistical design and the
+measurement implementation. Scope is documentation only, not new experimental
+implementation or execution. The previous1200-second approval is not inherited.
+
+## MS38 L1 Do
+
+BREAK_EVEN_DESIGN.md defines the cost identities and all signed break-even cases,
+SRS/STD, a genuine inventory risk workload, separate state/compute/branch factors,
+companion versus contiguous timing endpoints, calibration, held-out prediction
+validation, input-structure transfer, denominators and proposed resources.
+BREAK_EVEN_IMPLEMENTATION_PLAN.md adds SDD/IDD,14 direct/research test cases,
+BE001..014 traceability and TASK208..214 milestones. break-even-protocol.json is
+a design artifact explicitly unsupported by the current runner, not a launch file.
+
+## MS38 L1 Review
+
+Independent code review found that legacy application wall includes scientific
+history projection and receipt work, and branch planning recreates unused prefix
+actions. The new design preserves that historical evidence and specifies a new
+endpoint, keeping product validation while separating untimed semantic companions.
+Workload review replaces repeated branch plans with physically distinct quantity
+interventions and a meaningful risk calculation whose result enters reward.
+Statistical review separates arithmetic cost prediction from geometric ratios,
+retains all root states, and separates new-seed validation from burst-input transfer.
+
+## MS38 L1 Reflect
+
+The design does not demonstrate a crossover, model accuracy, human productivity,
+or broad simulator generality. New kernel parameters and actual budget feasibility
+remain to be measured after implementation and execution authorization. Direct
+design consistency checks and final review are recorded at the design checkpoint;
+no simulation, install, smoke, freeze gate or whole test suite is run in this task.
+The final design check parsed the JSON, verified24 conditions/144 calibration
+cells/864 calibration arms and all N-dependent totals, checked14 requirement/test
+mappings and local links, and enumerated500 signed-threshold arithmetic cases.
+Both80-row input schedules retain64 prefix/16 suffix demands with no competing
+product0 demand between receipt and the distinguishing demand. These are static
+design checks, not simulation results or implementation test passes. All three
+independent reviewers' substantive comments were incorporated: every demand's
+risk contributes to cumulative reward; input overrides are construction-defined;
+timed output uses only normal immutable scalars; calibration eligibility and
+validation selection/uncertainty rules are explicit. The forecast is a declared
+hypothetical risk law, not a fitted predictor of actual future demand.
+Same-purpose corrective tasks added in this design loop:0. Future tasks must use
+numbered Plan/Do/Review/Reflect and stop after ten same-purpose added tasks.
