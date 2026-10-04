@@ -46,8 +46,8 @@ terminal denominators on stderr and cannot be reported as study success. Owned
 timeout/escalation and failed/mismatched/incomplete pairs have direct mock coverage.
 
 Linux WSL Ubuntu24.04 CPython3.12.3: a separate local Git clone on the Linux
-filesystem, with spaces in its path, passed36/36 tests before the final synthetic
-pipeline case was added. Real Q/M N/C1 functional arms passed4/4 with2/2 exact
+filesystem, with spaces in its path, passed37/37 tests after fast-forwarding to
+implementation/test commit728b418. Real Q/M N/C1 functional arms passed4/4 with2/2 exact
 comparisons. Imported150 files retained their size/SHA256 through Git checkout.
 This qualifies functional portability on WSL, not bare-metal Linux performance,
 all Python>=3.11 versions, macOS, or cross-platform snapshot interchange.
@@ -82,3 +82,8 @@ branch `codex/portable-benchmark`. No remote push.
 
 Same-purpose corrective task additions0; this is one implementation/review cycle.
 Source/history publication remains withheld pending a separate user instruction.
+
+MS-RL-36 / TASK-RL-200 complete: remote configured locally, portable script and
+documentation committed, focused Windows/Linux functional checks complete.
+The new24-arm performance preset is available but has not been executed in this
+task. Next user-controlled steps are publication/push and fresh-PC measurement.
