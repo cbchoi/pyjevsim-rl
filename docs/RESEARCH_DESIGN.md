@@ -57,8 +57,14 @@ Implement V1 and an explicit V2 addition of cumulative stockout penalty and its
 incremental reward baseline. C1 uses the existing generic bundle and boundary;
 N uses native snapshot data and handwritten clock/calendar/boundary sidecar;
 R reconstructs the prefix. A separate domain oracle reduces correlated errors.
-Fix the exact cases before running the research cohort and record them in its
-manifest. No Q/M/packet code is relabeled as an unseen model.
+The fixed cases are V1/V2 x deterministic configurations 0/1/2 x cuts0/3/4
+at delta0.25 x first-suffix order quantities0/4/9, followed by seven zero
+actions. These are 54 three-method branch cells and 162 branch executions,
+not 54 independent stochastic replications. Prefix orders quantity5 at step
+index1; demand times are0.25/0.75/1.5/2.25/3.0 and replenishment lead0.5.
+Include time0 cuts, in-flight orders, demand/replenishment ties, repeated-branch
+isolation, and malformed V2 penalty/baseline rejection. Record these settings
+in the result manifest. No Q/M/packet code is relabeled as an unseen model.
 
 Inventory is new relative to the preexisting framework, but its implementation
 is developed by the same AI team with access to both methods. Therefore it is
@@ -115,7 +121,9 @@ fresh result directories only. Research modules are recorded as executed source.
 Default research workflow limits are 600 seconds including analysis, 16 MiB new
 results/transient storage, one simulation worker and BLAS1, 120 seconds per
 timing arm. Development and directly relevant tests are outside timing evidence.
-Budget expiry preserves partial denominators and stops; no automatic extension
+Reserve the final30 seconds of the remaining workflow time for cost analysis;
+the simulation submission budget excludes this fixed reserve. Budget expiry
+preserves partial denominators and stops; no automatic extension
 or rerun. Memory lifetime and interference-free host status remain unconfirmed.
 Successful full traces/snapshots are ephemeral; compact findings, per-case
 receipts, source identities and failure records remain. Results from this host

@@ -1,0 +1,22 @@
+{
+  "schema": "novice-ai-assisted-developer-pilot-v1",
+  "status": "template-not-observed-data",
+  "participant_id": null,
+  "assignment_slot": null,
+  "consent_reference": null,
+  "experience": {"python": null, "agentic_ai": null, "simulation": "none-reported-for-target-group"},
+  "period": null,
+  "treatment": null,
+  "task_variant": null,
+  "source_commit": null,
+  "ai": {"model": null, "version": null, "tools": [], "budget": null, "fresh_context": null},
+  "integration": {"budget_minutes": 40, "started_utc": null, "first_correct_elapsed_seconds": null,
+    "completed": null, "censored": null, "submissions": [], "help": []},
+  "maintenance": {"budget_minutes": 20, "started_utc": null, "baseline_supplied_after_incomplete_integration": null,
+    "first_correct_elapsed_seconds": null, "completed": null, "censored": null, "submissions": [], "help": []},
+  "active_work_seconds": null,
+  "idle_seconds": null,
+  "withdrawal": null,
+  "assessor": null,
+  "deidentified_artifact_reference": null
+}
