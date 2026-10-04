@@ -59,6 +59,19 @@ class RunnerTests(unittest.TestCase):
         self.assertFalse(cell["exact"])
         self.assertEqual(len(cell["arm_ids"]), 1)
 
+    def test_complete_synthetic_pipeline_returns_zero_and_writes_findings(self):
+        with patch.object(runner, "invoke", side_effect=self.successful), \
+             patch.object(runner.host, "metadata", return_value={}), \
+             contextlib.redirect_stdout(io.StringIO()):
+            code = runner.main(["--condition", "idle", "--output", str(self.campaign)])
+        self.assertEqual(code, 0)
+        result = json.loads((self.campaign / "analysis.json").read_text(encoding="utf-8"))
+        self.assertEqual(result["denominators"]["succeeded"], 24)
+        self.assertEqual(result["exact_cells"]["exact"], 12)
+        self.assertTrue(result["study_admission"])
+        self.assertEqual(json.loads((self.campaign / "analysis-status.json").read_text())["status"], "completed")
+        self.assertTrue((self.campaign / "findings.md").is_file())
+
     def test_final_write_error_preserves_terminal_accounting_on_stderr(self):
         original = runner.Budget.write
         def write(budget, path, value, **kwargs):

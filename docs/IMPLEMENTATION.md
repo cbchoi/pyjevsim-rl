@@ -23,12 +23,16 @@ launch the new24-arm performance experiment as part of packaging.
   actual new24-arm experiment and its analysis. Help/setup-only do not run models.
 - No profiler, test suite, smoke run or freeze-state gate is in the experiment path.
 
-## MS-RL-36-L1 Review — checkpoint
+## MS-RL-36-L1 Review
 
 Windows CPython3.14.0: bootstrap setup-only succeeded; dedicated dill0.4.1 was
 installed with its wheel hash. Help succeeded without setup; a second setup-only
-call reused the environment without reinstalling. Focused46 tests passed:
-analysis/host9, bootstrap17, design5, imported-source1, runner13, actual-model integration1.
+call reused the environment without reinstalling. The final focused suite has37
+tests: analysis/host9, bootstrap17, design5, imported-source1, runner4,
+actual-model integration1. All37 pass on Windows. The development runner suite
+initially had13 passing mocks; it was reduced to3 essential cases and one end-to-end
+synthetic24/12 execution→analysis test was added. Its values are artificial fixtures,
+not a research experiment.
 The integration check uses4 tiny arms (Q/M × N/C1, L1/B1/suffix8), including
 paths with spaces, and observed4/4 success and2/2 exact physical comparisons.
 These timings are not performance evidence. Full24-arm experiment not executed.
@@ -41,13 +45,27 @@ field mismatches before final verification. Final-summary write failures preserv
 terminal denominators on stderr and cannot be reported as study success. Owned
 timeout/escalation and failed/mismatched/incomplete pairs have direct mock coverage.
 
-Linux WSL Ubuntu24.04 CPython3.12.3 is available but its system Python lacks
-ensurepip/python3-venv. Bootstrap reports manual distribution-package prerequisites;
-it does not install system packages or overwrite partial environments. An isolated
-Linux verification checkout is being prepared. Linux functional verification and
-clone byte checks are not yet asserted in this checkpoint.
+Linux WSL Ubuntu24.04 CPython3.12.3: a separate local Git clone on the Linux
+filesystem, with spaces in its path, passed36/36 tests before the final synthetic
+pipeline case was added. Real Q/M N/C1 functional arms passed4/4 with2/2 exact
+comparisons. Imported150 files retained their size/SHA256 through Git checkout.
+This qualifies functional portability on WSL, not bare-metal Linux performance,
+all Python>=3.11 versions, macOS, or cross-platform snapshot interchange.
 
-## MS-RL-36-L1 Reflect — checkpoint
+The WSL system Python lacks ensurepip/python3-venv. No system packages were
+installed. For this verification only, its dedicated venv was created using
+`venv --without-pip` and seeded with the universal pip25.2 wheel already bundled
+with Windows Python. The repository's ordinary setup-only then installed the
+locked dill wheel and succeeded. This workaround is not part of the application
+or a required runtime dependency; ordinary fresh Linux setup requires the distro's
+matching venv package, as documented in README. Fresh default venv creation on
+that particular unprepared Linux installation was therefore not qualified.
+
+Independent read-only agent review found no blocking inconsistency between README,
+design, workload and implemented measurement scopes. New orchestration Python also
+uses explicit LF checkout attributes; imported Python retains its exact original bytes.
+
+## MS-RL-36-L1 Reflect
 
 The artifact isolates the portability/interference question, not a new performance
 claim. C1 is the existing implementation, without changing its costly source

@@ -1,4 +1,5 @@
 * text=auto
+*.py text eol=lf
 # Source identity is a byte-level contract. Do not normalize imported code.
 src/** -text
 vendor/** -text
