@@ -84,7 +84,7 @@ that negative result rather than increasing the grid until it wins.
 | MS37 L3 | TASK203 | RES005..007 | Inventory V1/V2 and54-cell study | Nine direct tests;54/54 cells,162 primary and36 repeat executions | Core reuse is not fewer LOC or saved time |
 | MS37 L4 | TASK204 | RES008..010 |330-arm cost surface and analysis |18 direct tests and independent statistical review | Pointwise exploratory intervals, not universal crossover |
 | MS37 L5 | TASK205 | Portable bounded sequencing | run_research and purpose-aware runner | Six entry and four runner direct checks; first cohort time-stopped | Preserve229 successes,1 deadline failure,94 timing and6 counting unexecuted |
-| MS37 L6 | TASK206 | User-approved time-only amendment | New1200-second cost-only cohort planned | Same methods/config/seeds; no pooling or retry of old cohort | Pending new execution |
+| MS37 L6 | TASK206 | User-approved time-only amendment | New1200-second cost-only cohort |330/330 arms and110/110 exact; independent numerical review | No C1 time advantage in sampled grid; keep negative result |
 
 The first actual workflow `research-20261004-01` ended in579.612 seconds. Stage
 semantics and transfer completed; cost is partial and study_admission=false.
@@ -93,3 +93,27 @@ zero original core changes and the limits on adapter code-size interpretation.
 The new time allowance was explicitly approved by the user after the first
 cohort; previous results are retained. Same-purpose task additions remain below
 the ten-task stop rule; no code or hypothesis is changed to select favorable data.
+
+## MS37 L6 Complete result and reflection
+
+`research-20261004-02` completed with process exit0 in763.790 seconds. All324
+timing plus6 counting arms succeeded, all108 timing plus2 counting cells were
+exact, and both models have six complete nine-condition families. Analysis
+completed with20000 whole-family bootstrap replicates. Recorded sources agreed
+for330 arms. Independent reviewers checked denominators, direct saved-row ratios,
+callback accounting, unchanged original sources and the limits of the claims.
+
+Actual prefix decision steps fell from4096 to256 for N and C1 at L256/B16.
+N was faster than replay in several sampled conditions, but C1 was slower than
+both alternatives throughout the sampled grid. More skipped callbacks do not
+automatically imply lower wall time when framework work is much more expensive.
+The scientific result is retained, not optimized away within the same cohort.
+
+TASK201..206 implementation and engineering studies are complete within their
+declared scope. Human evaluation remains unexecuted: four potential novice
+participants are available, but matched task packs, consent/scheduling and
+actual sessions are still required. Do not mark human productivity improvement
+as achieved. The inventory C1 adapter is not smaller than its N counterpart.
+RESEARCH_RESULTS.md records all three completed engineering analyses and the
+separate first-cohort failure. The documentation skill's evidence/scope guidance
+keeps measured findings, conditional arguments and missing human evidence distinct.
