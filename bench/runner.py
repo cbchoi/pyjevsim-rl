@@ -29,11 +29,15 @@ def denominators(manifest, rows):
     ids = {row["arm_id"] for row in rows}
     if len(ids) != len(rows):
         raise ValueError("duplicate attempts are not permitted")
-    planned = len(manifest["arms"])
-    return {"timing": {"planned": planned, "attempted": len(rows),
-        "succeeded": sum(row["status"] == "succeeded" for row in rows),
-        "failed": sum(row["status"] != "succeeded" for row in rows),
-        "unexecuted": planned - len(rows)}}
+    result = {}
+    for purpose in dict.fromkeys(arm["purpose"] for arm in manifest["arms"]):
+        planned = sum(arm["purpose"] == purpose for arm in manifest["arms"])
+        observed = [row for row in rows if row["purpose"] == purpose]
+        result[purpose] = {"planned": planned, "attempted": len(observed),
+            "succeeded": sum(row["status"] == "succeeded" for row in observed),
+            "failed": sum(row["status"] != "succeeded" for row in observed),
+            "unexecuted": planned - len(observed)}
+    return result
 
 
 def failed_row(spec, case, message):
@@ -50,6 +54,7 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
     remaining = budget.seconds - (time.perf_counter() - budget.started)
     request_path = campaign / "requests" / f"{spec['arm_id']}.json"
     request = {"spec": spec, "case": case, "campaign": str(campaign),
+        "experiment_kind": manifest.get("experiment_kind", "idle-primary"),
         "remaining_seconds": min(manifest["budget"]["attempt_seconds"], remaining),
         "max_bytes": budget.max_bytes, "retained_bytes": budget.written + 65536,
         "max_transport_bytes": min(4 * 1024**2, budget.max_bytes)}
@@ -175,7 +180,7 @@ def run_campaign(root, campaign, manifest, *, python=None, stage_started=None):
             if len(cell) == len(expected):
                 complete = all(item["status"] == "succeeded" for item in rows if item["cell_id"] == spec["cell_id"])
                 exact = complete and len({encoded(value) for value in cell.values()}) == 1
-                summary = {"cell_id": spec["cell_id"], "purpose": "timing", "complete": complete,
+                summary = {"cell_id": spec["cell_id"], "purpose": spec["purpose"], "complete": complete,
                     "exact": exact, "methods": manifest["methods"],
                     "arm_ids": [arm["arm_id"] for arm in expected],
                     "projection_sha256_by_method": {method: [sha(branch) for branch in value] for method, value in cell.items()},
@@ -212,7 +217,8 @@ def run_campaign(root, campaign, manifest, *, python=None, stage_started=None):
                 cleanup_records.append({"arm_id": directory.name, "removed": False, "error": str(exc)})
                 stop_reason = stop_reason or "parent transient cleanup failed"
     for cell_id, values in pending.items():
-        summary = {"cell_id": cell_id, "purpose": "timing", "complete": False, "exact": False,
+        purpose = next(arm["purpose"] for arm in manifest["arms"] if arm["cell_id"] == cell_id)
+        summary = {"cell_id": cell_id, "purpose": purpose, "complete": False, "exact": False,
             "methods": manifest["methods"], "arm_ids": [row["arm_id"] for row in rows if row["cell_id"] == cell_id],
             "projection_sha256_by_method": {key: [sha(branch) for branch in value] for key, value in values.items()},
             "whole_projection_sha256_by_method": {key: sha(value) for key, value in values.items()}}
@@ -233,12 +239,15 @@ def run_campaign(root, campaign, manifest, *, python=None, stage_started=None):
     completed_cells = sum(item["complete"] for item in cells)
     exact_cells = sum(item["exact"] for item in cells)
     admission = (stop_reason is None and not write_errors and not unpersisted and not unpersisted_cells
-        and counts["timing"]["succeeded"] == len(manifest["arms"]) and exact_cells == planned_cells
+        and sum(group["succeeded"] for group in counts.values()) == len(manifest["arms"]) and exact_cells == planned_cells
         and all(row.get("cleanup_confirmed") is True for row in rows))
     execution = {"status": "completed" if admission else "failed", "study_admission": admission,
         "started_utc": started_utc, "ended_utc": datetime.now(timezone.utc).isoformat(),
         "stop_reason": stop_reason, "denominators": counts,
-        "exact_cells": {"timing": {"planned": planned_cells, "complete": completed_cells, "exact": exact_cells}},
+        "exact_cells": {purpose: {
+            "planned": len({arm["cell_id"] for arm in manifest["arms"] if arm["purpose"] == purpose}),
+            "complete": sum(item["complete"] for item in cells if item["purpose"] == purpose),
+            "exact": sum(item["exact"] for item in cells if item["purpose"] == purpose)} for purpose in counts},
         "campaign_wall_seconds": time.perf_counter() - budget.started,
         "peak_storage_observed_at_boundaries_bytes": budget.peak_observed_bytes,
         "retained_bytes_before_summary": budget.written, "final_storage_observation_complete": storage_complete,

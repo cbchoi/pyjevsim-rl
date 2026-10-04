@@ -1,6 +1,6 @@
 # pyjevsim-rl: portable local continuation experiment
 
-Windows와 Linux에서 같은 소스로 **기본 PyJevSim snapshot 실행(N)** 과
+Windows와 Linux에서 같은 소스로 **native snapshot + 모델 전용 복원 보조 코드(N)** 와
 **재사용 가능한 continuation framework(C1)** 를 비교하는 작은 실험 저장소입니다.
 큐(Q)와 제조 시스템(M)을 사용하며 **고정 행동의 시뮬레이션 실행**을 측정합니다.
 강화학습 학습/수렴 실험이나 gorti federation 실험은 아닙니다. RTI 서버는 필요하지 않습니다.
@@ -97,7 +97,38 @@ idle/busy 실행은 같은 입력을 쓰지만 독립 표본을 추가한 것으
   가능하면 `/mnt/c` 같은 Windows 마운트 대신 Linux 파일시스템에 clone하세요.
 - RL 정책 품질·학습 수렴·gorti federation·일반적인 병렬 우위는 평가하지 않습니다.
 
-## 구조 / 출처
+## 복원 의미와 새 모델 및 실행 비용 연구
+
+기존 24회 실험은 그대로 두고, 별도 진입점으로 세 평가를 실행할 수 있습니다.
+
+```sh
+python3 run_research.py --stage all --condition unspecified
+```
+
+Windows에서는 `python3` 대신 `py -3.14` 또는 준비된 `.venv/Scripts/python.exe`를
+사용합니다. 개별 평가는 `--stage semantics`, `--stage transfer`, `--stage cost`입니다.
+실행마다 새 결과 폴더를 사용하며 과거 결과나 실패 실행을 덮어쓰지 않습니다.
+
+- `semantics.json`: Q/M 18개 조건의 R/N/C1 복원·개입 비교, 162개 분기 궤적,
+  난수·보상·시각·분기 격리 및 관측기의 오류 검출 검사.
+- `transfer.json`: 새 재고·보충 모델 V1/V2의 54개 세 방법 비교 셀과 독립 도메인
+  계산 비교. AI가 수행한 공학 사례연구이며 사람의 개발시간 절감 측정은 아닙니다.
+- `cost/findings.md`: Q/M × prefix16/64/256 × branches1/4/16 × 6 family × R/N/C1,
+  324회 시간 측정과 별도 6회 콜백 계수. R은 분기마다 앞부분을 다시 실행합니다.
+- `workflow.json`: 전체 완료·실패·미실행 단계. `protocol.json`은 실행 소스와 환경 기록.
+
+기본 전체 실행·분석 상한은 600초·새 결과와 일시 파일 16MiB입니다. 비용 분석용
+30초를 남겨 두고 워커1·BLAS1로 순차 실행합니다. 상한으로 중단되면 부분 결과를
+보존하며 재시도하지 않습니다. 간섭 없는 호스트나 전체 수명 메모리 상한 준수를
+인증하지 않습니다. 저장 공간은 경계 관측이며 관측 사이 최대 사용량은 미확인입니다.
+새 연구의 실행시간은 기존 Linux 자료와 합치지 않습니다.
+
+요구사항·설계·추적성은 [연구 설계](docs/RESEARCH_DESIGN.md), 조건부 의미 보존
+논증은 [의미 보존 논증](docs/SEMANTICS_ARGUMENT.md)에 있습니다. 확보 가능한
+학부 졸업반 4명을 위한 [AI 보조 개발 파일럿 절차](docs/DEVELOPER_STUDY.md)도
+준비했지만, 실제 참여자 자료는 아직 수집하지 않았습니다.
+
+## 구조와 출처
 
 ```text
 run_experiment.py           # 준비 → 실행 → 분석의 단일 진입점

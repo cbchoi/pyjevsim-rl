@@ -4,6 +4,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "vendor"), str(ROOT / "bench")]
@@ -27,6 +28,17 @@ class PhysicalObserverTests(unittest.TestCase):
         report = run_study(seeds=(971000,), cuts=(1,), deadline=time.perf_counter() - 1)
         self.assertEqual((report["planned"], report["attempted"], report["unexecuted"]), (2, 0, 2))
         self.assertFalse(report["admission"])
+
+    def test_storage_limit_stops_new_cases_and_controls(self):
+        failed_case = {"status": "failed", "completed_trajectories": 0,
+                       "peak_transient_observed_bytes": 100, "storage_budget_reached": True}
+        with (patch("bench.research.semantics.run_case", return_value=failed_case) as run,
+              patch("bench.research.semantics._modules", return_value={})):
+            report = run_study(seeds=(971000,), cuts=(1,), max_bytes=1)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(report["unexecuted"], 1)
+        self.assertEqual(report["negative_controls"]["status"], "unexecuted")
+        self.assertFalse(report["study_admission"])
 
 
 class LiveSemanticsTests(unittest.TestCase):

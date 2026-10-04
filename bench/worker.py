@@ -30,7 +30,8 @@ def provenance(root, modules):
     """Actual loaded repository sources, not a complete dependency closure."""
     files = {}
     for name, module in tuple(sys.modules.items()):
-        if name.split(".")[0] not in ("pyjevsim", "pyjevsim_bridge", "rti1516e", "continuation_study"):
+        if (name.split(".")[0] not in ("pyjevsim", "pyjevsim_bridge", "rti1516e", "continuation_study")
+                and not name.startswith("bench.research")):
             continue
         location = getattr(module, "__file__", None)
         if location is None:
@@ -64,13 +65,20 @@ def main(argv=None):
     args = parser.parse_args(argv)
     request = json.loads(args.request.read_bytes())
     root = Path(__file__).resolve().parents[1]
-    sys.path[:0] = [str(root / "src"), str(root / "vendor"), str(root / "bench")]
+    sys.path[:0] = [str(root / "src"), str(root / "vendor"), str(root / "bench"), str(root)]
     spec, case = request["spec"], request["case"]
     log = ShortLog()
     try:
         with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
             run = importlib.import_module("continuation_study.run")
             modules = run.load_runtime_modules()
+            kind = request.get("experiment_kind", "idle-primary")
+            if kind == "runtime-cost-v1":
+                extension = importlib.import_module("bench.research.cost")
+            elif kind == "idle-primary":
+                extension = None
+            else:
+                raise ValueError("unknown allowlisted experiment kind")
             identity = provenance(root, modules)
             budget = run.Budget(request["campaign"], request["remaining_seconds"], request["max_bytes"])
             budget.started = worker_started
@@ -83,16 +91,20 @@ def main(argv=None):
                 return run.Backend(*args, **kwargs)
 
             internal = dict(spec, method="C" if spec["method"] == "C1" else spec["method"])
-            row, projection = run.execute_arm(internal, case, request["campaign"], budget, modules,
-                                              backend_factory=observed_backend)
+            if extension is None:
+                row, projection = run.execute_arm(internal, case, request["campaign"], budget, modules,
+                                                  backend_factory=observed_backend)
+            else:
+                row, projection = extension.execute_arm(run, internal, case, request["campaign"],
+                    budget, modules, backend_factory=observed_backend)
             cpu_end, wall_end = time.process_time(), time.perf_counter()
             row.update(spec)
             row.update(application_cpu_seconds=None if not entered else cpu_end - entered["cpu"],
                 cpu_scope_wall_seconds=None if not entered else wall_end - entered["wall"],
                 cpu_endpoint="backend-factory entry through execute_arm return; process CPU only",
                 cpu_endpoint_matches_application_wall=False,
-                cpu_instrumentation="two start/end clock pairs; same wrapper for N and C1; overhead not subtracted",
-                profile_overhead_included=False, event_counting_enabled=False,
+                cpu_instrumentation="two start/end clock pairs; identical across methods; overhead not subtracted",
+                profile_overhead_included=spec["purpose"] == "counting", event_counting_enabled=spec["purpose"] == "counting",
                 worker_elapsed_before_transport_seconds=time.perf_counter() - worker_started,
                 worker_peak_storage_observed_bytes=budget.peak_observed_bytes)
             packet = {"row": row, "projection": projection, "provenance": identity}
