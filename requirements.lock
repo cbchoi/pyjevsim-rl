@@ -1,0 +1,4 @@
+# Universal wheel only; no PyPI pyjevsim installation is permitted/needed.
+# Source: https://pypi.org/pypi/dill/0.4.1/json (verified 2026-10-04).
+# dill-0.4.1-py3-none-any.whl; default dill has no extra runtime dependencies.
+dill==0.4.1 --hash=sha256:1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d

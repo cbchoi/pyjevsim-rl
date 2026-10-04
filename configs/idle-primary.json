@@ -1,0 +1,18 @@
+{
+  "preset": "idle-primary",
+  "condition": "unspecified",
+  "models": ["Q", "M"],
+  "methods": ["N", "C1"],
+  "families": 6,
+  "prefix_steps": 64,
+  "branch_count": 8,
+  "suffix_steps": 8,
+  "delta": 0.25,
+  "seed_bases": {"Q": 961000, "M": 962000},
+  "planning_seed": 961251,
+  "bootstrap_seed": 961252,
+  "seed_offset": 0,
+  "budget_seconds": 600,
+  "max_mib": 16,
+  "attempt_seconds": 120
+}

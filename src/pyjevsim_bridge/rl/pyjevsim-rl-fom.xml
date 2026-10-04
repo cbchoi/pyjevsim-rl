@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objectModel xmlns="http://standards.ieee.org/IEEE1516-2010"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://standards.ieee.org/IEEE1516-2010 IEEE1516-DIF-2010.xsd">
+  <modelIdentification>
+    <name>pyjevsim-rl</name>
+    <type>FOM</type>
+    <version>1.0</version>
+    <modificationDate>2026-07-19</modificationDate>
+    <securityClassification>Unclassified</securityClassification>
+    <description>Versioned timestamp-ordered channel for pyjevsim reinforcement-learning rollouts.</description>
+    <useHistory>Initial RL federation profile.</useHistory>
+  </modelIdentification>
+  <objects>
+    <objectClass><name>HLAobjectRoot</name></objectClass>
+  </objects>
+  <interactions>
+    <interactionClass>
+      <name>HLAinteractionRoot</name>
+      <interactionClass>
+        <name>RLAction</name><sharing>PublishSubscribe</sharing><transportation>HLAreliable</transportation><order>TimeStamp</order>
+        <semantics>Coordinator action command.</semantics>
+        <parameter><name>payload</name><dataType>HLAopaqueData</dataType><semantics>Canonical UTF-8 JSON version-1 envelope.</semantics></parameter>
+      </interactionClass>
+      <interactionClass>
+        <name>RLTransition</name><sharing>PublishSubscribe</sharing><transportation>HLAreliable</transportation><order>TimeStamp</order>
+        <semantics>Environment-worker transition record.</semantics>
+        <parameter><name>payload</name><dataType>HLAopaqueData</dataType><semantics>Canonical UTF-8 JSON version-1 envelope.</semantics></parameter>
+      </interactionClass>
+      <interactionClass>
+        <name>RLReceipt</name><sharing>PublishSubscribe</sharing><transportation>HLAreliable</transportation><order>TimeStamp</order>
+        <semantics>Worker or actor phase and terminal receipt delivered to the coordinator.</semantics>
+        <parameter><name>payload</name><dataType>HLAopaqueData</dataType><semantics>Canonical UTF-8 JSON version-1 envelope.</semantics></parameter>
+      </interactionClass>
+      <interactionClass>
+        <name>RLControl</name><sharing>PublishSubscribe</sharing><transportation>HLAreliable</transportation><order>TimeStamp</order>
+        <semantics>Run, reset, checkpoint, and shutdown control.</semantics>
+        <parameter><name>payload</name><dataType>HLAopaqueData</dataType><semantics>Canonical UTF-8 JSON version-1 envelope.</semantics></parameter>
+      </interactionClass>
+      <interactionClass>
+        <name>RLPolicyAnnouncement</name><sharing>PublishSubscribe</sharing><transportation>HLAreliable</transportation><order>TimeStamp</order>
+        <semantics>Immutable policy artifact announcement.</semantics>
+        <parameter><name>payload</name><dataType>HLAopaqueData</dataType><semantics>Canonical UTF-8 JSON version-1 envelope.</semantics></parameter>
+      </interactionClass>
+    </interactionClass>
+  </interactions>
+</objectModel>

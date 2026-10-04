@@ -1,0 +1,8 @@
+* text=auto
+# Source identity is a byte-level contract. Do not normalize imported code.
+src/** -text
+vendor/** -text
+bench/continuation_study/** -text
+*.md text eol=lf
+*.json text eol=lf
+requirements.lock text eol=lf
