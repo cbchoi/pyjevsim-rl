@@ -27,6 +27,21 @@ accounting checks passed9/9. The new runner preserves purpose-specific timing
 and counting denominators. Actual research execution remains pending.
 Same-purpose corrective tasks added: one scoped transient-accounting repair.
 
+TASK204 implemented the predeclared R/N/C1 cost grid, sustained inputs, common
+kernel action-plan extension and three-way analysis. Eighteen direct unit tests
+passed in1.299 seconds. The first development run found an input-gap counterexample
+at the late Q cut; before measurement, Q input spacing was changed from1.0 to0.5
+with the same0/0.125 jitter. Grid/seeds/denominators remained unchanged. This
+is a premeasurement workload correction, not a favorable-result rerun.
+
+Read-only cross-review confirmed joint model-specific whole-family resampling,
+three-way comparison accounting and the distinction between callback vectors
+and unique simulated events. It also found a root workflow accounting error:
+analysis failure could label an already executed cost stage unexecuted. Stage
+entry and execution denominators are now recorded before analysis. Root's six
+direct entry checks pass, including this failure path. These are implementation
+repairs; no actual timing cohort has yet been run.
+
 ## MS37 L1 Review
 
 Planning separates replay savings from native-snapshot overhead, scientific
