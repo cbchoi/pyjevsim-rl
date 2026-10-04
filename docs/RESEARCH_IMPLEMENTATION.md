@@ -42,6 +42,22 @@ entry and execution denominators are now recorded before analysis. Root's six
 direct entry checks pass, including this failure path. These are implementation
 repairs; no actual timing cohort has yet been run.
 
+TASK203 implemented a new inventory/replenishment domain, V2 linear lost-sale
+penalty state and reward baseline, C1 declarations and independent N sidecar.
+Nine directly relevant tests passed in3.382 seconds. Premeasurement review
+corrected the prefix order to time0.5/due1.0, making cut0.75 genuinely contain
+a pending order. Receipts assert the pending state. A fractional-rate development
+test found/guards canonical linear penalty evaluation; the fixed study rate2.5
+is unchanged. Failure-path cleanup and partial-arm/control accounting were
+reviewed. No full transfer cohort has been executed at this checkpoint.
+
+Native inventory restoration reuses existing wire/staging helpers, so its new
+file size is not the total implementation cost. The V2 penalty is derivable
+from lost demand times a fixed rate: it is a concrete but simple maintenance
+case, not arbitrary hidden-state recovery. Three C1 controls reject malformed
+payloads at the producer validation step, one rejects cross-version restore,
+and two N controls check live-state consistency. These are distinct evidence.
+
 ## MS37 L1 Review
 
 Planning separates replay savings from native-snapshot overhead, scientific

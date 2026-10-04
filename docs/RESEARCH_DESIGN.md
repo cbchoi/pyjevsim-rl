@@ -36,6 +36,9 @@ the first suffix action, including repair jitter. Seeds 971000/971001/971002
 and cuts 1/4/9 give 18 model/seed/cut cases. Each compares R/N/C1 under the same
 input history and future action sequence, with 16 suffix steps. Stable logical
 identity is checked; physical instance names are normalized only where needed.
+Q uses one explicit arrival tape; its three seeds do not create three stochastic
+input histories. M exercises distinct future repair RNG streams. These counts
+describe conformance coverage, not independent model-population samples.
 Equal end rewards alone are insufficient: retain compact digests and explicit
 pass/fail receipts for step observations, ordered history, reward, clocks, RNG,
 shared aliases, source immutability and A/B/A branch isolation. Instrumentation
@@ -61,7 +64,7 @@ The fixed cases are V1/V2 x deterministic configurations 0/1/2 x cuts0/3/4
 at delta0.25 x first-suffix order quantities0/4/9, followed by seven zero
 actions. These are 54 three-method branch cells and 162 branch executions,
 not 54 independent stochastic replications. Prefix orders quantity5 at step
-index1; demand times are0.25/0.75/1.5/2.25/3.0 and replenishment lead0.5.
+index2 (time0.5, due1.0); demand times are0.25/0.75/1.5/2.25/3.0 and replenishment lead0.5.
 Include time0 cuts, in-flight orders, demand/replenishment ties, repeated-branch
 isolation, and malformed V2 penalty/baseline rejection. Record these settings
 in the result manifest. No Q/M/packet code is relabeled as an unseen model.
@@ -87,6 +90,9 @@ Seeds are Q971000..971005 and M972000..972005; planning seed973251;
 bootstrap seed973252. All six permutations of R/N/C1 occur once per condition.
 Randomize condition order within family. Use arrivals that continue through the
 largest prefix plus suffix horizon; do not benchmark an accidentally empty model.
+Q arrivals occur every0.5 time units plus seed-selected0/0.125 jitter through
+66.5; M arrivals occur every0.25 through66.75. This ensures arrival activity
+after each measured cut; it is a new workload, not pooled with older timings.
 Action plans are parameterized for all methods, with no branch-specific source
 editing charged only to N. C1 maps to the unchanged kernel's C method.
 
