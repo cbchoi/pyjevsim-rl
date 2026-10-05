@@ -210,6 +210,13 @@ capture/restore와 명시적인 inspection은 full 검증을 유지합니다. �
 [개선 기록](docs/CONTINUATION_IMPROVEMENT_PROGRESS.md)에 있습니다. 별도의
 [개발자 과제 명세](docs/developer_tasks/README.md)는 실제 사람 평가나 완성된 실행형 과제 배포본을 뜻하지 않습니다.
 
+2026년10월5일 Windows 탐색 비교는 시간 예산으로55/96회에서 종료했고, 완성6개 셀은
+모두 exact였습니다. 별도 의사결정 사례는24/24건을 완료했습니다. C1A의 strict 대비 비용
+절감 가능성은 관측했지만 native 대비 우위는 입증하지 못했습니다.
+[실제 분모와 결과 및 한계](docs/CONTINUATION_IMPROVEMENT_RESULTS.md)를 확인하세요.
+기존 본 손익분기 calibration/validation/transfer에 C1A를 연결한 확증 파이프라인은 아직
+완료되지 않았으므로 위 탐색 명령을 본 확증 실험으로 사용하지 마세요.
+
 ## 구조와 출처
 
 ```text

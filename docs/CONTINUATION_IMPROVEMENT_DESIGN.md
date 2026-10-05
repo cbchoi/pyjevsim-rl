@@ -74,6 +74,11 @@ worker1/BLAS1, 새 탐색 시간 최대600초·저장16MiB, arm120초를 사용�
 사용자에게 질문한다. 답변 전에는 본 연구를 시작하지 않는다. 기존 부분 코호트는 재개하지 않는다.
 최적화 버전을 평가하려면 새 실행 프로파일을 명시하고 calibration부터 다시 수행한다.
 
+호스트 답변은 전용 Linux로 확정됐다. 단계 예산 재배분 답변과 접속/결과 전달 방식은
+아직 없으며, Windows 본 연구를 대신 실행하지 않는다. `run_improvement.py`는 위의
+작은 탐색 연구용이다. C1A를 포함하는 full calibration/validation/transfer의 독립 확증
+설계와 파이프라인 확장은 별도 미완료 범위로 유지한다.
+
 ## 의사결정 사례연구
 
 목적은 snapshot 기반 후보 평가가 실제 선택에 주는 효용이다. 기존 risk benchmark의
@@ -105,3 +110,24 @@ Plan Do Review Reflect를 남긴다. 동일 목적 보완 task가 동일 milesto
 추가되면 중단하고 판단을 요청한다. task 완료마다 명시 경로만 author/committer
 `cbchoi with claude <me@cbchoi.info>`로 commit한다. push·공개·타 저장소 수정은 하지 않는다.
 직접 관련 시험만 수행하며 자동 smoke/freeze/전체 시험을 실험 시작 조건으로 추가하지 않는다.
+
+## 구현과 결과 추적 상태
+
+2026년10월5일의 실제 상태다. 상세 분모와 실패는
+[결과 보고서](CONTINUATION_IMPROVEMENT_RESULTS.md) 및
+[loop 기록](CONTINUATION_IMPROVEMENT_PROGRESS.md)에 보존한다.
+
+| 요구사항 | 근거 경로 | 현재 판정 |
+|---|---|---|
+| IMP001∼004 | coordinator.py, registry.py, test_admitted_runtime.py, test_break_even_domain.py | 구현과 직접 시험 완료, 성능 확증 아님 |
+| IMP005∼006 | state_fields.py, declared_inventory_adapter.py, test_declared_state_fields.py | 기존 모델 공통화 완료, 신규 모델 일반화 아님 |
+| IMP007 | test_future_calendar_contract.py | 명시 범위의 관측·거부·격리 시험 완료 |
+| IMP008 | improvement_study.py, run_improvement.py, test_improvement_study.py | 55/96 실행과 exact6/12 부분 결과 보존, admission false |
+| IMP009 | decision_utility.py, test_decision_utility.py | 탐색 24/24 완료, 학습 효용 미평가 |
+| IMP010 | run_research.py, 본 설계의 Linux 이관 조건 | 본 연구와 C1A full 파이프라인 미완료 |
+| IMP011 | docs/developer_tasks/ | 명세만 완료, 실행형 과제·사람 연구 미완료 |
+| IMP012 | CONTINUATION_IMPROVEMENT_PROGRESS.md, task별 local commit | 실제 결과와 제한 기록, 공개·push 없음 |
+
+파일명은 src/pyjevsim_bridge/rl/continuation, bench/research, tests 안의 해당 경로를
+가리킨다. MS42/43은 완료, MS44는 탐색 부분 종료·본 연구 대기, MS45는 과제 명세와
+의사결정 사례만 완료 상태다. 전체 계획의 완료로 올리지 않는다.
