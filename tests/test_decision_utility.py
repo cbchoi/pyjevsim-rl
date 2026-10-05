@@ -145,6 +145,9 @@ class DecisionUtilityTests(unittest.TestCase):
         result = d.evaluate_selections(family, [0, 32, None], panel, modules=modules, clock=clock)
         self.assertTrue(result["native_oracle_exact"])
         self.assertEqual(result["native_trajectories_checked"], 6)
+        self.assertAlmostEqual(result["selected_native_check_seconds"], 6 * 12 * .01)
+        self.assertEqual(result["heldout_oracle_seconds"], 0.)
+        self.assertAlmostEqual(result["evaluation_wall_seconds"], result["selected_native_check_seconds"])
         self.assertTrue(all(row["regret"] >= 0 for row in result["selections"].values()))
         altered = copy.deepcopy(panel)
         altered["configs"][0]["demands"][0]["quantity"] += 1
@@ -170,6 +173,13 @@ class DecisionUtilityTests(unittest.TestCase):
             self.assertEqual(report["denominators"]["completed_families"], 2)
             self.assertNotEqual(report["families"][0]["method_order"], report["families"][1]["method_order"])
             self.assertTrue(all(row["fixed_candidate_exact"] for row in report["families"]))
+            self.assertTrue(all(row["planning_oracle_seconds"] == 0 for row in report["families"]))
+            self.assertFalse(report["method_order_balance"]["complete_position_balance"])
+            self.assertEqual(len(report["additional_paired_summary"]), 4)
+            for contrast in report["additional_paired_summary"]:
+                self.assertEqual(contrast["method"], "C1A")
+                self.assertIn(contrast["reference"], ("N", "C1"))
+                self.assertEqual(len(contrast["pairs"]), 2)
         clock = Clock()
         report = d.run_decision_study(families=2, candidates=4, evaluation_rollouts=2,
             max_seconds=.075, modules=fake_modules(clock), clock=clock, backend_factory=FakeBackend)
