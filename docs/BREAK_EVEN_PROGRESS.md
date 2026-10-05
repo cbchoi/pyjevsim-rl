@@ -10,8 +10,10 @@ TASK209 측정과 실행 연결, TASK210 분석을 병렬 구현한다. TASK211�
 새 실행 요청은 제안된 전체9,000초, 단계3,600/3,600/1,800초, 단일 arm120초,
 새 연구32MiB와 그 안 transient8MiB 범위로 적용한다. N 상한48·불리한 결과 보존·
 재시도 금지를 유지한다. Linux 전용 PC와 현재 Windows 중 실행 호스트를 확인하는
-질문을 보냈으며 답변 전에는 구현·직접 관련 검증을 진행한다. 설치나 smoke/freeze
-검사를 시작 조건으로 추가하지 않는다.
+질문을 보냈으며 우선 구현·직접 관련 검증을 진행했다. 별도 Linux 접속 정보가 없어
+현재 접근 가능한 Windows 호스트를 기본 실행 대상으로 준비한다고 사용자에게 알렸다.
+실행 시 condition은 unspecified이며 전용 Linux의 통제된 결과로 해석하지 않는다.
+설치나 smoke/freeze 검사를 시작 조건으로 추가하지 않는다.
 
 ## MS39 L1 Do
 
@@ -29,7 +31,7 @@ TASK210 완료: `break_even_analysis.py`와 직접 합성 시험22개를 구현�
 
 통합 검토에서 collection이 부분 중단되더라도 기술 분석을 보존하고, collection 수용과
 analysis 수용을 모두 만족해야 다음 단계로 이동하도록 보완했다. 아직 실제 연구
-cohort 분모와 성능 결과는 없다. 나머지 구현과 직접 검증은 진행 중이다.
+cohort 분모와 성능 결과는 없다. 나머지 구현과 검증 결과는 아래 기록으로 갱신한다.
 
 ## MS39 L1 Reflect
 
@@ -43,6 +45,25 @@ Review에서 직접 의미 시험12개가 통과했다. 초기·수요 직후·�
 Reflect: 구성 검증이80개 입력을 재생성하는 비용은 제품 검증으로 측정 안에 남는다.
 Native journal은 신뢰한 로컬 artifact이며 적대적 변조 전체를 인증하는 보안 연구가 아니다.
 성능 cohort 실행은 이 task에 포함하지 않았다.
+
+### TASK209 완료 기록
+
+Plan은 기존 측정 의미를 보존하며 새 kind만 연결하고 별도의 연속 wall/CPU endpoint를
+구현하는 것이었다. Do에서 순차 계획, 측정, worker 연결, 세 단계 collection과 compact
+보관을 구현했다. Review에서 planner5 + fake endpoint13 + 실제6-arm 대조1 + 격리
+worker1의20개 직접시험이 통과했다. K1/S512/B16의 R/N/C1 companion full-state와
+6개 arm 정상 scalar 출력이 일치했고, 실제 worker에서 source identity·4MiB 전송·
+소유한 scratch 정리도 확인했다. 이때 얻은 시간은 연구 결과로 보관·사용하지 않았다.
+
+추가로 collection/entry/owned-process 관련16개 시험이 통과했다. effective plan hash,
+실패 분모, provenance 기록 실패 시 attempted 보존, 부분 분석, 기존 cost 진입점과
+direct-child timeout 경로를 확인했다. 관련70개 시험은 task별 실행 합계이며 전체 시험
+모음을 실행했다는 뜻이 아니다. 실제 연구 TC13b는 아직 수행하지 않았다.
+
+Reflect: 첫 family 이후의 feasibility는 관측 process wall과1.5 안전계수를 사용한다.
+후속 단계는 calibration의 역할·방법별 최대 process wall을 사용한 보수적 추정이다.
+예측된 완료 가능성은 보증이 아니며 Windows Job/process-group 전체 소유권, lifetime
+memory, 외부 간섭 없음은 인증하지 않는다. old source/kernel/result는 그대로 유지했다.
 
 초기 위험은 Python risk kernel의 계획된 총 계산량과 stage 상한이다. 첫 완전 calibration
 family로 예측한 나머지 비용이 상한을 초과하면 설계대로 중단·보고한다. 유리한

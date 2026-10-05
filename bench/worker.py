@@ -71,43 +71,66 @@ def main(argv=None):
     try:
         with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
             run = importlib.import_module("continuation_study.run")
-            modules = run.load_runtime_modules()
             kind = request.get("experiment_kind", "idle-primary")
             if kind == "runtime-cost-v1":
                 extension = importlib.import_module("bench.research.cost")
+            elif kind == "break-even-v1":
+                extension = importlib.import_module("bench.research.break_even_run")
+                modules = extension.load_runtime_modules()
             elif kind == "idle-primary":
                 extension = None
             else:
                 raise ValueError("unknown allowlisted experiment kind")
+            if kind != "break-even-v1":
+                modules = run.load_runtime_modules()
             identity = provenance(root, modules)
             budget = run.Budget(request["campaign"], request["remaining_seconds"], request["max_bytes"])
             budget.started = worker_started
             budget.written = request["retained_bytes"]
-            entered = {}
-
-            def observed_backend(*args, **kwargs):
-                entered["wall"] = time.perf_counter()
-                entered["cpu"] = time.process_time()
-                return run.Backend(*args, **kwargs)
-
-            internal = dict(spec, method="C" if spec["method"] == "C1" else spec["method"])
-            if extension is None:
-                row, projection = run.execute_arm(internal, case, request["campaign"], budget, modules,
-                                                  backend_factory=observed_backend)
+            if kind == "break-even-v1":
+                from run_research import source_inventory
+                from bench.continuation_study.cases import sha
+                actual_source_identity = sha(source_inventory())
+                if actual_source_identity != spec.get("source_identity"):
+                    raise RuntimeError("break-even executed source differs from assigned source")
+                original_sample = budget.sample_transient
+                def bounded_sample(directory):
+                    original_sample(directory)
+                    if budget.transient_bytes > request["transient_max_bytes"]:
+                        raise RuntimeError("break-even transient storage cap reached")
+                budget.sample_transient = bounded_sample
+                row, projection = extension.execute_arm(spec, case, request["campaign"], budget, modules)
+                row.update(spec)
+                row.update(actual_source_identity=actual_source_identity,
+                    worker_elapsed_before_transport_seconds=time.perf_counter() - worker_started,
+                    worker_peak_storage_observed_bytes=budget.peak_observed_bytes)
+                packet = {"row": row, "projection": projection, "provenance": identity}
             else:
-                row, projection = extension.execute_arm(run, internal, case, request["campaign"],
-                    budget, modules, backend_factory=observed_backend)
-            cpu_end, wall_end = time.process_time(), time.perf_counter()
-            row.update(spec)
-            row.update(application_cpu_seconds=None if not entered else cpu_end - entered["cpu"],
-                cpu_scope_wall_seconds=None if not entered else wall_end - entered["wall"],
-                cpu_endpoint="backend-factory entry through execute_arm return; process CPU only",
-                cpu_endpoint_matches_application_wall=False,
-                cpu_instrumentation="two start/end clock pairs; identical across methods; overhead not subtracted",
-                profile_overhead_included=spec["purpose"] == "counting", event_counting_enabled=spec["purpose"] == "counting",
-                worker_elapsed_before_transport_seconds=time.perf_counter() - worker_started,
-                worker_peak_storage_observed_bytes=budget.peak_observed_bytes)
-            packet = {"row": row, "projection": projection, "provenance": identity}
+                entered = {}
+
+                def observed_backend(*args, **kwargs):
+                    entered["wall"] = time.perf_counter()
+                    entered["cpu"] = time.process_time()
+                    return run.Backend(*args, **kwargs)
+
+                internal = dict(spec, method="C" if spec["method"] == "C1" else spec["method"])
+                if extension is None:
+                    row, projection = run.execute_arm(internal, case, request["campaign"], budget, modules,
+                                                      backend_factory=observed_backend)
+                else:
+                    row, projection = extension.execute_arm(run, internal, case, request["campaign"],
+                        budget, modules, backend_factory=observed_backend)
+                cpu_end, wall_end = time.process_time(), time.perf_counter()
+                row.update(spec)
+                row.update(application_cpu_seconds=None if not entered else cpu_end - entered["cpu"],
+                    cpu_scope_wall_seconds=None if not entered else wall_end - entered["wall"],
+                    cpu_endpoint="backend-factory entry through execute_arm return; process CPU only",
+                    cpu_endpoint_matches_application_wall=False,
+                    cpu_instrumentation="two start/end clock pairs; identical across methods; overhead not subtracted",
+                    profile_overhead_included=spec["purpose"] == "counting", event_counting_enabled=spec["purpose"] == "counting",
+                    worker_elapsed_before_transport_seconds=time.perf_counter() - worker_started,
+                    worker_peak_storage_observed_bytes=budget.peak_observed_bytes)
+                packet = {"row": row, "projection": projection, "provenance": identity}
     except BaseException as exc:
         packet = {"row": {**spec, "status": "failed", "error": f"{type(exc).__name__}: {exc}",
             "error_phase": "worker-import-or-outside-arm", "config_sha256": case["config_sha256"],
@@ -115,6 +138,10 @@ def main(argv=None):
             "cpu_scope_wall_seconds": None, "cleanup_confirmed": None, "cleanup_errors": [],
             "memory_complete": False, "whole_lifetime_peak_bytes": None},
             "projection": [], "provenance": None}
+    return emit_packet(packet, log, request)
+
+
+def emit_packet(packet, log, request):
     packet["worker_log"] = {"text": log.text, "discarded_characters": log.discarded_characters}
     payload = json.dumps(packet, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
     if len(payload) > request["max_transport_bytes"]:

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import hashlib
 import importlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -20,10 +21,11 @@ from run_experiment import ensure_environment, _already_isolated, _seconds, _mib
 
 def parser():
     result = argparse.ArgumentParser(description=__doc__)
-    result.add_argument("--stage", choices=("all", "semantics", "transfer", "cost"), default="all")
+    result.add_argument("--stage", choices=("all", "semantics", "transfer", "cost", "break-even"), default="all")
     result.add_argument("--output", type=Path)
-    result.add_argument("--budget-seconds", type=_seconds, default=600.0)
-    result.add_argument("--max-mib", type=_mib, default=16)
+    result.add_argument("--budget-seconds", type=float, default=None,
+                        help="default600; break-even default9000 with fixed stage caps")
+    result.add_argument("--max-mib", type=_mib, default=None, help="default16; break-even default32 shared")
     result.add_argument("--condition", choices=("idle", "busy", "unspecified"), default="unspecified")
     return result
 
@@ -60,6 +62,22 @@ def run(options):
     sys.path[:0] = [str(ROOT / "src"), str(ROOT / "vendor"), str(ROOT / "bench")]
     for key in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ[key] = "1"
+    is_break_even = options.stage == "break-even"
+    if options.budget_seconds is None:
+        options.budget_seconds = 9000.0 if is_break_even else 600.0
+    if options.max_mib is None:
+        options.max_mib = 32 if is_break_even else 16
+    if is_break_even:
+        if not math.isfinite(options.budget_seconds) or not 0 < options.budget_seconds <= 9000:
+            raise ValueError("break-even total budget must be positive and at most9000 seconds")
+        if options.max_mib > 32:
+            raise ValueError("break-even shared storage cap is32MiB")
+        from bench.research.break_even_campaign import run_workflow
+        output = options.output or ROOT / "results" / (
+            "break-even-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ"))
+        return run_workflow(ROOT, output, condition=options.condition,
+                            max_seconds=options.budget_seconds, max_bytes=options.max_mib*1024**2)
+    options.budget_seconds = _seconds(str(options.budget_seconds))
     started = time.perf_counter()
     deadline = started + options.budget_seconds
     cap = options.max_mib * 1024**2
@@ -156,7 +174,7 @@ def main(argv=None):
             return subprocess.run([str(python), "-I", "-B", str(ROOT / "run_research.py"),
                                    *arguments], check=False).returncode
         return run(options)
-    except (OSError, RuntimeError, ImportError) as error:
+    except (OSError, RuntimeError, ImportError, ValueError) as error:
         print(f"Research stopped: {type(error).__name__}: {error}", file=sys.stderr)
         return 2
 

@@ -58,6 +58,8 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
         "remaining_seconds": min(manifest["budget"]["attempt_seconds"], remaining),
         "max_bytes": budget.max_bytes, "retained_bytes": budget.written + 65536,
         "max_transport_bytes": min(4 * 1024**2, budget.max_bytes)}
+    if manifest.get("experiment_kind") == "break-even-v1":
+        request["transient_max_bytes"] = manifest["budget"]["transient_max_bytes"]
     if len(encoded(request)) + 1 > 65536:
         raise ValueError("request exceeds its preaccounted allowance")
     budget.write(request_path, request)
@@ -82,10 +84,14 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
                 output, stderr = process.communicate(timeout=min(1.0, remaining))
                 break
             except subprocess.TimeoutExpired:
-                observed = storage_bytes(campaign)
+                observed = storage_bytes(budget.root if manifest.get("experiment_kind") == "break-even-v1" else campaign)
                 budget.peak_observed_bytes = max(budget.peak_observed_bytes, observed)
                 if observed > budget.max_bytes - budget.reserve:
                     termination = "observed storage budget reached"
+                    break
+                if (manifest.get("experiment_kind") == "break-even-v1"
+                        and storage_bytes(campaign / "transient") > request["transient_max_bytes"]):
+                    termination = "observed transient storage budget reached"
                     break
         if termination:
             process.terminate()
@@ -109,7 +115,21 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
                     raise ValueError("successful receipt from failed process")
                 if row["status"] == "succeeded":
                     projection = packet["projection"]
-                    if (type(projection) is not list or len(projection) != spec["branch_count"]
+                    if manifest.get("experiment_kind") == "break-even-v1":
+                        witness = row.get("scalar_witness")
+                        if (type(witness) is not list or len(witness) != spec["branch_count"]
+                                or any(type(branch) is not list or len(branch) != spec["suffix_steps"] for branch in witness)
+                                or sha(witness) != row.get("scalar_witness_sha256")
+                                or row.get("actual_source_identity") != spec["source_identity"]):
+                            raise ValueError("break-even scalar/source receipt differs")
+                        if spec["role"] == "timing":
+                            if projection != [] or row.get("workflow_wall_seconds") is None:
+                                raise ValueError("timing observer or endpoint contract differs")
+                        elif (type(projection) is not list or len(projection) != spec["branch_count"]
+                                or any(type(branch) is not list or len(branch) != spec["suffix_steps"] for branch in projection)
+                                or [sha(branch) for branch in projection] != row.get("branch_projection_sha256")):
+                            raise ValueError("companion projection differs from digest receipt")
+                    elif (type(projection) is not list or len(projection) != spec["branch_count"]
                             or any(type(branch) is not list or len(branch) != spec["suffix_steps"] for branch in projection)
                             or [sha(branch) for branch in projection] != row.get("branch_projection_sha256")):
                         raise ValueError("successful projection differs from workload/digest receipt")
