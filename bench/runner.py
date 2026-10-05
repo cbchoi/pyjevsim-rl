@@ -58,7 +58,7 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
         "remaining_seconds": min(manifest["budget"]["attempt_seconds"], remaining),
         "max_bytes": budget.max_bytes, "retained_bytes": budget.written + 65536,
         "max_transport_bytes": min(4 * 1024**2, budget.max_bytes)}
-    if manifest.get("experiment_kind") == "break-even-v1":
+    if manifest.get("experiment_kind") in ("break-even-v1", "continuation-improvement-v1"):
         request["transient_max_bytes"] = manifest["budget"]["transient_max_bytes"]
     if len(encoded(request)) + 1 > 65536:
         raise ValueError("request exceeds its preaccounted allowance")
@@ -84,12 +84,12 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
                 output, stderr = process.communicate(timeout=min(1.0, remaining))
                 break
             except subprocess.TimeoutExpired:
-                observed = storage_bytes(budget.root if manifest.get("experiment_kind") == "break-even-v1" else campaign)
+                observed = storage_bytes(budget.root if manifest.get("experiment_kind") in ("break-even-v1", "continuation-improvement-v1") else campaign)
                 budget.peak_observed_bytes = max(budget.peak_observed_bytes, observed)
                 if observed > budget.max_bytes - budget.reserve:
                     termination = "observed storage budget reached"
                     break
-                if (manifest.get("experiment_kind") == "break-even-v1"
+                if (manifest.get("experiment_kind") in ("break-even-v1", "continuation-improvement-v1")
                         and storage_bytes(campaign / "transient") > request["transient_max_bytes"]):
                     termination = "observed transient storage budget reached"
                     break
@@ -115,7 +115,7 @@ def invoke(root, campaign, manifest, spec, case, budget, *, python):
                     raise ValueError("successful receipt from failed process")
                 if row["status"] == "succeeded":
                     projection = packet["projection"]
-                    if manifest.get("experiment_kind") == "break-even-v1":
+                    if manifest.get("experiment_kind") in ("break-even-v1", "continuation-improvement-v1"):
                         witness = row.get("scalar_witness")
                         if (type(witness) is not list or len(witness) != spec["branch_count"]
                                 or any(type(branch) is not list or len(branch) != spec["suffix_steps"] for branch in witness)

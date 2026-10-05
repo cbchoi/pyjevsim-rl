@@ -74,21 +74,25 @@ def main(argv=None):
             kind = request.get("experiment_kind", "idle-primary")
             if kind == "runtime-cost-v1":
                 extension = importlib.import_module("bench.research.cost")
-            elif kind == "break-even-v1":
-                extension = importlib.import_module("bench.research.break_even_run")
+            elif kind in ("break-even-v1", "continuation-improvement-v1"):
+                extension = importlib.import_module("bench.research." + (
+                    "break_even_run" if kind == "break-even-v1" else "improvement_study"))
                 modules = extension.load_runtime_modules()
             elif kind == "idle-primary":
                 extension = None
             else:
                 raise ValueError("unknown allowlisted experiment kind")
-            if kind != "break-even-v1":
+            if kind not in ("break-even-v1", "continuation-improvement-v1"):
                 modules = run.load_runtime_modules()
             identity = provenance(root, modules)
             budget = run.Budget(request["campaign"], request["remaining_seconds"], request["max_bytes"])
             budget.started = worker_started
             budget.written = request["retained_bytes"]
-            if kind == "break-even-v1":
-                from run_research import source_inventory
+            if kind in ("break-even-v1", "continuation-improvement-v1"):
+                if kind == "break-even-v1":
+                    from run_research import source_inventory
+                else:
+                    from bench.research.improvement_study import source_inventory
                 from bench.continuation_study.cases import sha
                 actual_source_identity = sha(source_inventory())
                 if actual_source_identity != spec.get("source_identity"):

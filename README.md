@@ -174,6 +174,42 @@ Windows/Linux 코호트를 합치지 않습니다. 측정 구간이 다른 결�
 독립 family1개뿐이므로 확증 결과가 아닙니다. [부분 결과와 한계](docs/BREAK_EVEN_RESULTS.md)에
 전체24조건과 중단 이유를 보존했습니다. Validation/transfer는 아직 수행하지 않았습니다.
 
+## 실행 계약과 의사결정 개선 연구
+
+기본 C1은 `strict-v1`이며 step마다 full admission을 유지합니다. 새 C1A는
+`admitted-runtime-v1`을 명시적으로 선택합니다. 신뢰한 모델과 설치 코드가 handle 수명 중
+변하지 않고 내부를 직접 수정하지 않는다는 조건에서 정상 step의 반복 admission을 줄입니다.
+capture/restore와 명시적인 inspection은 full 검증을 유지합니다. 두 방식의 검사 주기가
+다르므로 같은 변조 탐지 보장을 유지한 성능 최적화라고 해석하지 마세요.
+
+준비된 환경에서 작은 탐색 연구를 실행할 수 있습니다. Windows는 아래의
+`.venv/bin/python`을 `.venv/Scripts/python.exe`로 바꾸세요.
+
+```sh
+.venv/bin/python -I -B run_improvement.py --stage performance --output results/linux-improvement-01
+.venv/bin/python -I -B run_improvement.py --stage decision --output results/linux-decision-01
+```
+
+`performance`는 R/N/C1/C1A × K1/4096 × S8 × B4/16 × 3 family × 두 역할의
+96 arms/12 comparison cells입니다. 600초/16MiB, worker1/BLAS1이며 companion 전체 비교와
+비계측 timing을 분리합니다. `execution.json`과 `analysis.json`에서 분모와 시간비를 확인하세요.
+3개 family의 탐색 결과이지 본 손익분기 확증 연구가 아닙니다.
+
+`decision`은 별도 재고 의사결정의 구매·보유·품절 비용을 평가합니다. 같은 후보 수와
+같은 soft wall 예산을 분리하고, 선택 뒤 독립 미래 수요에서 손실을 평가합니다. 기본3family,
+8candidate,8평가 미래,24decision arms,120초/8MiB입니다. `decision.json`을 확인하세요.
+이는 RL 학습·수렴 실험이 아닙니다. 초과 후보·선택 없음·실패를 그대로 보고합니다.
+
+실험 스크립트는 자동 설치·smoke·freeze 검사를 하지 않습니다. 가상환경이 없으면 기존
+`python3 run_experiment.py --setup-only`를 한 번 실행하세요. 기존 output은 재개·덮어쓰지 않습니다.
+소스가 변경되면 새 코호트에서 실행하고 이전 결과와 합치지 마세요. 본 연구는 전용 Linux에서
+진행하기로 했으며, 위 명령은 현재 checkout의 변경이 Linux에 전달된 뒤 실행해야 합니다.
+원격 push나 Linux 실행을 자동으로 수행하지 않습니다.
+
+설계와 제한은 [개선 설계](docs/CONTINUATION_IMPROVEMENT_DESIGN.md), 진행 상태는
+[개선 기록](docs/CONTINUATION_IMPROVEMENT_PROGRESS.md)에 있습니다. 별도의
+[개발자 과제 명세](docs/developer_tasks/README.md)는 실제 사람 평가나 완성된 실행형 과제 배포본을 뜻하지 않습니다.
+
 ## 구조와 출처
 
 ```text

@@ -58,3 +58,34 @@ TASK216 신규 직접시험15개와 기존 관련 domain12개가 통과했다. �
 TASK216은27개 고유 직접시험을 통과했다. admitted는 같은 검증 보장이라는 주장을
 하지 않는다. 성능 효과는 아직 미측정이며 독립 비계측 timing이 필요하다.
 동일 목적 보완 task 추가 수0. TASK217/218은 구현 중이다.
+
+### TASK217 결과
+
+명시적 단독 소유 필드의 capture/validate/restore 도우미와 별도 inventory V1/V2 어댑터를
+추가했다. 공통화 예시이지 코드량이나 생산성 감소 결과가 아니다. 원래 모델과 어댑터는
+변경하지 않았다. 직접시험11개에서 native N·기존 C1·독립 oracle 일치 등을 확인했다.
+미래 calendar 지연 관측, rehashed snapshot의 domain deadline 불일치 거부,
+postallocation 실패 격리의3개 시험도 통과했다. 고유14개다. 새 case가 arbitrary tie order를
+보장하는 것은 아니다. 개발 중 시험의 절대 논리시각 인자1건을 수정했다.
+
+### TASK218 결과
+
+원래 inventory 구성 기능으로 동일한 prefix와 별도의 계획/평가 미래를 생성했다.
+구매1·말기보유0.5·품절4 비용을 적용하고 실제 action/모델 전이로 후보를 평가한다.
+평가 oracle의 최선은 독립 미래 panel 평균에서의 최선 고정 후보이며 미래별 전지적 선택이 아니다.
+R/N/C1/C1A의 고정 후보·고정 soft 예산 비교와 실제 runtime profile 확인을 구현했다.
+직접시험11개가 통과했고, 이 시점에는 실제24개 decision arm 연구를 실행하지 않았다.
+
+## MS44 L1 Plan
+
+TASK219는 source 편집과 직접 시험을 종료한 뒤 새 Windows 코호트96arms를 순차 실행한다.
+독립 검토가 지적한 invoke 실패 분모 누락·저장 실패 원자료 누락을 보완했고, 부분 코호트의
+whole-family 구간은3개 완전 family가 모두 있을 때만 출력한다. 실제 handle profile도 확인한다.
+Root의 계획·분모·통계·실패 기록14개 시험과 기존 직접 관련 runner/entry10개가 통과했다.
+실제 child에서 C1A companion/출처/정리를 확인하는1개 직접시험은 연구 timing과 구분한다.
+
+## MS45 L1 Plan
+
+TASK221의4개 문서로 신규 대응 과제·공통 정확성 의무·AI 조건·판정표를 준비했다.
+실행형 starter/oracle/evaluator, 참여 동의와 일정, 실제 관측은 아직 없다. 문서 명세만으로
+인간 생산성이나 과제 실행 가능성을 확인했다고 주장하지 않는다.
