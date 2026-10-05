@@ -31,6 +31,8 @@ class RuntimeHandle:
         self._lock = threading.RLock()
         self._state = 'READY'
         self._cleanup_errors: tuple[str, ...] = ()
+        self._execution_profile = coordinator.execution_profile
+        self._admission_witness = None
 
     @property
     def state(self) -> str:
@@ -40,10 +42,15 @@ class RuntimeHandle:
     def profile_id(self) -> str:
         return self._bundle.profile.profile_id
 
+    @property
+    def execution_profile(self) -> str:
+        """Execution assurance contract, separate from snapshot semantics."""
+        return self._execution_profile
+
     def step(self, action):
         with self._coordinator._locked(self):
             self._coordinator._require_ready(self)
-            self._coordinator._admit(self._bundle, self._parts)
+            self._coordinator._admit_step(self)
             self._state = 'STEPPING'
             try:
                 result = self._parts.env.step(action)
@@ -51,6 +58,7 @@ class RuntimeHandle:
                 return result
             except BaseException:
                 self._state = 'INVALID'
+                self._admission_witness = None
                 raise
 
     def close(self) -> CleanupReceipt:
@@ -58,6 +66,7 @@ class RuntimeHandle:
             if self._state in ('STEPPING', 'CAPTURING', 'CLOSING'):
                 raise ContinuationError('CC_BUSY', 'operation in progress')
             self._state = 'CLOSING'
+            self._admission_witness = None
             result = self._cleanup.close()
             self._cleanup_errors += tuple(result.errors)
             self._state = 'CLOSED' if result.success else 'INVALID'
@@ -76,8 +85,46 @@ class RuntimeHandle:
 
 
 class ContinuationCoordinator:
-    def __init__(self, registry: ContinuationRegistry):
+    """Continuation transactions with explicit ordinary-step assurance.
+
+    ``strict-v1`` preserves full admission before every step.
+    ``admitted-runtime-v1`` is opt-in trusted-model execution: installed source,
+    providers, callbacks and validators must not change during a handle's life;
+    callers must not mutate engine/model/environment internals. Supported model
+    transitions must preserve their declared invariants. Ordinary steps retain
+    lifetime/ownership checks and the unchanged environment execution path, but
+    do not immediately detect arbitrary internal or installation mutation.
+    Capture, restore, inspection and semantic views remain full checkpoints.
+    Neither profile is a sandbox against arbitrary Python modification.
+    """
+
+    def __init__(self, registry: ContinuationRegistry, *, execution_profile="strict-v1"):
+        if type(execution_profile) is not str or execution_profile not in (
+                "strict-v1", "admitted-runtime-v1"):
+            raise ContinuationError('CC_UNSUPPORTED_PROFILE', 'unknown execution profile')
         self.registry = registry
+        self._execution_profile = execution_profile
+
+    @property
+    def execution_profile(self) -> str:
+        return self._execution_profile
+
+    def _publish_runtime(self, bundle, parts, cleanup):
+        # The callers have completed the full fresh/restore validation. Mint no
+        # witness for strict execution and add no source reads to its path.
+        runtime = RuntimeHandle(self, bundle, parts, cleanup)
+        if self.execution_profile == 'admitted-runtime-v1':
+            runtime._admission_witness = self.registry._admitted_runtime_witness(bundle, runtime)
+        return runtime
+
+    def _admit_step(self, runtime):
+        if runtime.execution_profile == 'strict-v1':
+            self._admit(runtime._bundle, runtime._parts)
+        elif runtime.execution_profile == 'admitted-runtime-v1':
+            self.registry._require_admitted_runtime(runtime._admission_witness,
+                bundle=runtime._bundle, runtime=runtime)
+        else:
+            raise ContinuationError('CC_UNSUPPORTED_PROFILE', 'unknown runtime execution profile')
 
     @contextmanager
     def _locked(self, runtime, *, allow_closed=False):
@@ -183,7 +230,7 @@ class ContinuationCoordinator:
                        'policy_context': request.policy_context,
                        'sampling_context': request.sampling_context}
             encode_snapshot(self._payload(bundle, parts, logical), registry=self.registry)
-            return RuntimeHandle(self, bundle, parts, cleanup)
+            return self._publish_runtime(bundle, parts, cleanup)
         except BaseException as exc:
             raise self._cleanup_failure(cleanup, exc, 'create-fresh') from exc
 
@@ -250,6 +297,7 @@ class ContinuationCoordinator:
                     self._admit(bundle, parts)
                 except BaseException as exc:
                     runtime._state = 'INVALID'
+                    runtime._admission_witness = None
                     raise ContinuationError('CC_CAPTURE_MUTATED', 'source invariance could not be confirmed',
                                             phase='capture', state_disposition='INVALID') from exc
                 else:
@@ -319,6 +367,6 @@ class ContinuationCoordinator:
             updated_logical = dict(logical, sampling_context=thaw_value(branch.sampling_context))
             encode_snapshot(self._payload(bundle, parts, updated_logical, states=states), registry=self.registry)
             checked.assert_unchanged(payload)
-            return RuntimeHandle(self, bundle, parts, cleanup)
+            return self._publish_runtime(bundle, parts, cleanup)
         except BaseException as exc:
             raise self._cleanup_failure(cleanup, exc, 'restore') from exc

@@ -165,6 +165,45 @@ class ContinuationRegistry:
             fail("snapshot and installed profile identities differ", "CC_INCOMPATIBLE_IDENTITY")
         return bundle
 
+    def _admitted_runtime_witness(self, bundle, runtime):
+        """Bind an already fully admitted runtime, not perform an admission.
+
+        Only the coordinator publication path calls this after full fresh or
+        restore validation. This witness is not a source/loaded-code cache and
+        is not a transferable validation capability.
+        """
+        witness = self._entry(bundle.profile.profile_id)
+        if witness[0] is not bundle:
+            fail("runtime bundle is not the registered entry", "CC_INCOMPATIBLE_IDENTITY")
+        return _AdmittedRuntimeWitness(self, bundle.profile, bundle, runtime, witness)
+
+    def _require_admitted_runtime(self, witness, *, bundle, runtime):
+        """Cheap lifetime/ownership check under the admitted-runtime contract.
+
+        Does not read sources, call providers, or export/validate live state.
+        Installed code and runtime internals must remain unmodified during the
+        handle lifetime. Full checkpoints continue to use get()/resolve().
+        """
+        if (type(witness) is not _AdmittedRuntimeWitness or witness.registry is not self
+                or witness.bundle is not bundle or witness.runtime is not runtime
+                or witness.profile is not bundle.profile):
+            fail("runtime admission witness is foreign or stale", "CC_INCOMPATIBLE_IDENTITY")
+        self._require_entry(witness.profile.profile_id, witness.entry)
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class _AdmittedRuntimeWitness:
+    """Private process-local runtime lifetime witness; never wire authority."""
+
+    registry: object
+    profile: object
+    bundle: object
+    runtime: object
+    entry: tuple
+
+    def __reduce_ex__(self, protocol):
+        raise TypeError("admitted runtime witnesses are process-local")
+
 
 _UNSPECIFIED = object()
 
