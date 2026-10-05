@@ -322,29 +322,42 @@ def evaluate_selections(family, selected_quantities, panel, *, modules=None, cos
     progress.update(status="running", panel_identity=panel["identity"],
         planned_oracle_cells=len(quantities) * len(panel["configs"]), completed_oracle_cells=0,
         planned_native_trajectories=len(selected) * len(panel["configs"]),
-        attempted_native_trajectories=0, native_trajectories_checked=0)
+        attempted_native_trajectories=0, native_trajectories_checked=0,
+        heldout_oracle_seconds=0., selected_native_check_seconds=0.)
     losses = {q: [] for q in quantities}
     native_checks = 0
     for index, config in enumerate(panel["configs"]):
         for quantity in quantities:
             check()
-            expected = modules["oracle"](config, actions(quantity), DELTA)
-            losses[quantity].append(loss(expected[-1]["observation"], expected[PREFIX_STEPS-1]["observation"], costs))
-            progress["completed_oracle_cells"] += 1
+            oracle_started = clock()
+            try:
+                expected = modules["oracle"](config, actions(quantity), DELTA)
+                losses[quantity].append(loss(expected[-1]["observation"], expected[PREFIX_STEPS-1]["observation"], costs))
+                progress["completed_oracle_cells"] += 1
+            finally:
+                progress["heldout_oracle_seconds"] += clock() - oracle_started
             if quantity in selected:
                 progress["attempted_native_trajectories"] += 1
-                runtime = modules["native"].create_native(config, family["master"], DELTA, 100,
-                    f"heldout-{index}-q{quantity}")
+                native_started = clock()
+                runtime = None
                 try:
+                    runtime = modules["native"].create_native(config, family["master"], DELTA, 100,
+                        f"heldout-{index}-q{quantity}")
                     actual = _advance(runtime, actions(quantity), check)
                     if actual != expected:
                         raise AssertionError("held-out native outcomes disagree with independent oracle")
                     native_checks += 1
                     progress["native_trajectories_checked"] = native_checks
                 finally:
-                    _close(runtime)
+                    try:
+                        if runtime is not None:
+                            _close(runtime)
+                    finally:
+                        progress["selected_native_check_seconds"] += clock() - native_started
+    oracle_started = clock()
     means = {q: sum(values) / len(values) for q, values in losses.items()}
     best = min(quantities, key=lambda q: (means[q], quantities.index(q)))
+    progress["heldout_oracle_seconds"] += clock() - oracle_started
     progress.update({"status": "completed", "panel_identity": panel["identity"], "evaluation_rollouts": len(panel["configs"]),
         "oracle_quantity": best, "oracle_loss": means[best],
         "oracle_definition": "best fixed candidate in independent held-out panel, not per-future clairvoyance",
@@ -426,12 +439,17 @@ def run_decision_study(output_directory=None, *, families=3, candidates=8, decis
             family_receipt = {key: copy.deepcopy(family[key]) for key in (
                 "family_id", "master", "seeds", "candidate_order", "prefix_identity", "planning_identity",
                 "candidate_order_identity")}
-            family_receipt.update(method_order=list(order), fixed_candidate_exact=False, completed=False)
+            family_receipt.update(method_order=list(order), fixed_candidate_exact=False, completed=False,
+                                  planning_oracle_seconds=0.)
             report["families"].append(family_receipt)
             expected = {}
             for quantity in family["candidate_order"]:
                 check()
-                expected[quantity] = modules["oracle"](family["config"], actions(quantity), DELTA)[PREFIX_STEPS:]
+                oracle_started = clock()
+                try:
+                    expected[quantity] = modules["oracle"](family["config"], actions(quantity), DELTA)[PREFIX_STEPS:]
+                finally:
+                    family_receipt["planning_oracle_seconds"] += clock() - oracle_started
             selected = []
             for mode in MODES:
                 mode_selected = []
@@ -490,26 +508,48 @@ def run_decision_study(output_directory=None, *, families=3, candidates=8, decis
         "completed_evaluation_panels": sum(row.get("status") == "completed" for row in report["evaluations"]),
         "unexecuted_evaluation_panels": families-len(report["evaluations"])}
     report["study_wall_seconds"] = clock() - started
+    position_counts = {method: [0] * len(methods) for method in methods}
+    for family in report["families"]:
+        if family["completed"]:
+            for position, method in enumerate(family["method_order"]):
+                position_counts[method][position] += 1
+    complete_order = (report["denominators"]["completed_families"] == families
+                      and families % len(methods) == 0)
+    report["method_order_balance"] = {"completed_family_position_counts": position_counts,
+        "complete_position_balance": complete_order,
+        "planned_position_balance": families % len(methods) == 0,
+        "note": "three families with four methods have incomplete position balance; descriptive results only",
+        "all_permutation_or_carryover_balance_claimed": False}
+    def paired_rows(mode, method, reference):
+        pairs = []
+        for family in report["families"]:
+            rows = {row["method"]: row for row in report["decisions"]
+                    if row["family_id"] == family["family_id"] and row["mode"] == mode
+                    and row["status"] == "completed"}
+            if method in rows and reference in rows:
+                a, b = rows[method], rows[reference]
+                pairs.append({"family_id": family["family_id"],
+                    "workflow_seconds_difference": a["workflow_wall_seconds"]-b["workflow_wall_seconds"],
+                    "completed_candidates_difference": a["completed_before_deadline"]-b["completed_before_deadline"],
+                    "both_selected": not a["no_decision"] and not b["no_decision"],
+                    "heldout_loss_difference": (a["heldout_evaluation"]["heldout_loss"]-b["heldout_evaluation"]["heldout_loss"])
+                        if a.get("heldout_evaluation") and b.get("heldout_evaluation") else None})
+        return pairs
     report["paired_summary"] = []
+    report["additional_paired_summary"] = []
     for mode in MODES:
         for method in methods:
             if method == "R":
                 continue
-            pairs = []
-            for family in report["families"]:
-                rows = {row["method"]: row for row in report["decisions"]
-                        if row["family_id"] == family["family_id"] and row["mode"] == mode
-                        and row["status"] == "completed"}
-                if method in rows and "R" in rows:
-                    a, b = rows[method], rows["R"]
-                    pairs.append({"family_id": family["family_id"],
-                        "workflow_seconds_difference": a["workflow_wall_seconds"]-b["workflow_wall_seconds"],
-                        "completed_candidates_difference": a["completed_before_deadline"]-b["completed_before_deadline"],
-                        "both_selected": not a["no_decision"] and not b["no_decision"],
-                        "heldout_loss_difference": (a["heldout_evaluation"]["heldout_loss"]-b["heldout_evaluation"]["heldout_loss"])
-                            if a.get("heldout_evaluation") and b.get("heldout_evaluation") else None})
             report["paired_summary"].append({"mode": mode, "method_minus_R": method,
-                "pairs": pairs, "inference": "descriptive individual family differences; no confirmatory CI"})
+                "pairs": paired_rows(mode, method, "R"),
+                "inference": "descriptive individual family differences; no confirmatory CI"})
+        for reference in ("N", "C1"):
+            if "C1A" in methods and reference in methods:
+                report["additional_paired_summary"].append({"mode": mode,
+                    "method": "C1A", "reference": reference, "contrast": f"C1A minus {reference}",
+                    "pairs": paired_rows(mode, "C1A", reference),
+                    "inference": "descriptive individual family differences; assurance contracts differ"})
     final_bytes = len(json.dumps(report, allow_nan=False, separators=(",", ":")).encode())
     if final_bytes > max_storage_bytes:
         report.update(status="failed", study_admission=False, error="final report exceeds storage allowance")
