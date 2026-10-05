@@ -135,8 +135,39 @@ Windows에서는 `python3` 대신 `py -3.14` 또는 준비된 `.venv/Scripts/pyt
 
 후속 [손익분기 예측 실험 설계](docs/BREAK_EVEN_DESIGN.md)는 비용식으로 계수를
 추정하고 새 조건에서 예측을 검증하는 계획입니다. [구현·시험 추적 계획](docs/BREAK_EVEN_IMPLEMENTATION_PLAN.md)과
-[구조화된 프로토콜](docs/break-even-protocol.json)을 함께 제공합니다. **아직 구현·실행하지
-않았으며 현재 실행기는 이 프로토콜을 지원하지 않습니다.** 새 예산도 제안 상태입니다.
+[구조화된 프로토콜](docs/break-even-protocol.json)을 함께 제공합니다. 구현과 실행 상태는
+[손익분기 진행 기록](docs/BREAK_EVEN_PROGRESS.md)을 참조하세요. 설계 당시의 JSON은
+변경하지 않고, 명시적 실행 요청에서 별도의 실행 명세를 결과 폴더에 기록합니다.
+
+### 손익분기 예측 연구 실행
+
+```sh
+python3 run_research.py --stage break-even --condition unspecified
+```
+
+준비된 환경을 바로 쓰려면 Linux는 `.venv/bin/python`, Windows는
+`.venv/Scripts/python.exe`로 같은 스크립트를 실행합니다. 실험 시작 시 자동 시험이나
+별도 freeze 검사는 하지 않습니다. `--condition idle`은 실제 전용 환경을 사용자가
+관리한 경우의 표시이며 부하가 없다는 보증은 아닙니다.
+
+이 단계는 기존 `--stage all`과 분리되어 있습니다. 새 inventory-risk-v1 모델의
+K×S×B에서 R/N/C1을 비교하며, calibration 864회 → 사전 산식으로 정한 N의
+validation 36N회 → burst 입력 transfer 216회를 순차 실행합니다. 각 셀의
+정확성 관찰 실행(companion)과 시간 측정 실행(timing)은 별개입니다.
+
+전체 상한은 9,000초(2.5시간), 단계별 3,600/3,600/1,800초, arm당120초입니다.
+새 세 단계 전체 저장량32MiB 안에 transient8MiB를 포함합니다. `--budget-seconds`와
+`--max-mib`로 상한을 줄일 수 있지만 자동 확대·N 축소·실패 실행 재시도는 하지 않습니다.
+첫 완전 calibration family의 관측 비용으로 남은 계산의 실행 가능성을 판단합니다.
+N이48을 넘거나 시간·저장량·모형 조건에 맞지 않으면 부분 자료를 보존하고 중단합니다.
+
+`workflow.json`은 전체 상태, `calibration/fit.json`은 비용식과 근의 불확실성,
+`predictions.json`은 새 좌표·N·고정 예측, 각 단계의 `findings.ko.md`는 요약입니다.
+`arms.jsonl`의 시간 원자료와 `cells.jsonl`의 동등성 기록을 보존합니다. 큰 trace는
+메모리에서 비교 후 버리고 snapshot은 소유한 arm 경로에서 정리합니다.
+새 `workflow_wall_seconds`에는 제품 검증·종료·snapshot 폐기가 포함되지만 연구용
+projection·해시·receipt는 제외됩니다. 기존 application 시간을 이 값으로 바꾸거나
+Windows/Linux 코호트를 합치지 않습니다. 측정 구간이 다른 결과의 직접 비교도 피하세요.
 
 ## 구조와 출처
 

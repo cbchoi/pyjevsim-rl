@@ -2,8 +2,9 @@
 
 이 문서는 [실험 설계](BREAK_EVEN_DESIGN.md)의 BE001부터 BE014까지를 구현할
 SDD, IDD, 직접 시험 사례와 작업 순서를 정의한다. 2026년 10월 4일 현재 설계 문서만
-작성하며 아래의 새 모듈과 시험은 **예정 산출물**이다. 과거 통과 시험을 새 구현의
-통과 근거로 재사용하지 않는다. 현재 실행기는 새 프로토콜을 지원하지 않는다.
+작성했으며 당시의 새 모듈과 시험은 예정 산출물이었다. 2026년10월5일의 후속 실행
+요청에 따른 구현·직접 시험·실행 상태는 [진행 기록](BREAK_EVEN_PROGRESS.md)에
+분리한다. 과거 통과 시험을 새 구현의 통과 근거로 재사용하지 않는다.
 
 ## 현재 코드 감사에서 확인한 제약
 
@@ -60,8 +61,9 @@ observer·counter 이외에 domain 코드로 전파되어서는 안 된다. timi
 
 ## 인터페이스 정의
 
-아래 함수명과 필드는 구현 계약이며 존재하는 API라는 뜻이 아니다. 새 kind는
-`break-even-v1`이다. 사용자용 실행 명령은 구현 후 실제 `--help`와 함께 제시한다.
+아래 함수명과 필드는 설계 당시의 구현 계약이다. 새 kind는 `break-even-v1`이다.
+구현 진입점은 `run_research.py --stage break-even`이며 실제 Python 함수의 인자는
+아래 대응표로 추적한다.
 
 ### 계획과 arm
 
@@ -75,6 +77,18 @@ fit_calibration(complete timing cells) -> FitReport
 select_validation(FitReport, protocol) -> PredictionManifest
 analyze_validation(PredictionManifest, new cells) -> ValidationReport
 ```
+
+| 계약 | 실제 구현 |
+|---|---|
+| 입력 생성 | `break_even_domain.make_input(input_structure, input_seed)`; K/S는 configuration에 별도 포함 |
+| 실행 | `break_even_run.execute_arm(spec, case, campaign, budget, modules=None)`; case 안에 입력·action plan |
+| 셀 대조 | `break_even_campaign._cell_summary(spec, packets)`; 전체 값을 메모리에서 비교 |
+| 분석 | `fit_calibration(plan, rows, cells, protocol=...)`, `select_validation(fit, protocol)`, `analyze_validation(predictions, plan, rows, cells, cohort=..., protocol=...)` |
+
+collection·자원 accounting 연결은 새 `break_even_campaign.py`가 담당한다. 기존 worker는
+직접 생성한 자식 프로세스 handle만 관리하며, 이번 경로에서 Windows Job/Linux process
+group 전체 소유권을 제공한다고 주장하지 않는다. 모델이 손자 프로세스를 만들지 않는
+단일 worker 연구이며 lifetime memory는 미확인으로 기록한다.
 
 Plan에 schema, stage, endpoint revision, protocol hash, source identity,
 input-generator version, forecast algorithm version, environment, seed 규칙,
@@ -183,7 +197,8 @@ TC07/09/13a의 합성 숫자 시험은 분석기 정확성 시험이지 시뮬�
 검토하고, Reflect는 미해결 원인과 다음 수정을 기록한다. 같은 목적의 보완 task가
 동일 milestone에서 10회 이상 추가되면 루프를 중단하고 판단을 요청한다.
 
-TASK207 외 작업은 이번 요청에서 수행하지 않는다. 이후 task 완료마다 명시 경로만
+설계 요청 당시에는 TASK207만 수행했다. 2026년10월5일의 실행 요청에 따라
+후속 task를 진행한다. task 완료마다 명시 경로만
 `cbchoi with claude <me@cbchoi.info>` 작성자와 committer로 commit한다. 다른 저장소의
 변경·staged 상태에 접근하거나 push하지 않는다.
 

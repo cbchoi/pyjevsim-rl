@@ -69,3 +69,27 @@ memory, 외부 간섭 없음은 인증하지 않는다. old source/kernel/result
 family로 예측한 나머지 비용이 상한을 초과하면 설계대로 중단·보고한다. 유리한
 손익분기점을 얻기 위한 K 변경이나 N 축소·예산 자동 연장은 하지 않는다.
 동일 목적 보완 task 추가 수0. 10회 이상 추가하면 루프 중단 규칙을 적용한다.
+
+### TASK211 완료 기록
+
+Plan: 새 모델의 직접 의미 시험과 endpoint·분모·통계 시험만 검토하고, 연구 중 병렬
+개발 부하를 만들지 않는다. Do: 세 담당자가 병렬 구현하고 root가 collection을 연결했다.
+Review: 관련70개 시험 통과, 실제 isolated worker 실행 경로 확인, 원본 src/vendor/
+continuation_study와 기존 cost·분석 파일의633e331 대비 변경 없음 확인. 전체 시험·
+smoke/freeze 단계는 수행하지 않았다. README 실행 명령과 IDD 실제 함수 대응도 갱신했다.
+Reflect: 전용 Linux 결과·호스트 무간섭·학습 성능·인간 생산성 증거는 확보한 것이 아니다.
+
+## MS40 L1 Plan — TASK212
+
+현재 접근 가능한 Windows에서 `condition=unspecified`인 독립 새 코호트
+`results/break-even-20261005-01`을 한 번 실행한다. 다른 프로그램은 종료하지 않는다.
+명령은 다음과 같다. 이 기록 시점에는 실행 직전이며 완료를 뜻하지 않는다.
+
+```powershell
+.\.venv\Scripts\python.exe -I -B run_research.py --stage break-even --condition unspecified --output results/break-even-20261005-01 --budget-seconds 9000 --max-mib 32
+```
+
+calibration864/864와144/144 셀이 수용되어야 사전 산식의 N과6개 예측 좌표를 정한다.
+처음 완전 family의 feasibility가 실패하거나 arm 오류·시간·저장 제한에 도달하면
+부분 기술 분석을 남기고 중단한다. N>48 또는 다음 단계 부적합이면 validation/transfer를
+임의로 줄이거나 시작하지 않는다. 수집 중 추가 모델·시험·분석을 병렬 실행하지 않는다.
